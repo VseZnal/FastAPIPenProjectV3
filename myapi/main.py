@@ -14,6 +14,7 @@ from fastapi_users.db import SQLAlchemyUserDatabase
 import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
+from myapi.models.product import *
 
 DATABASE_URL = 'sqlite:///./test.db'
 SECRET = '6bef18936ac12a9096e9fe7a3ygh3456368fe1f77746346erg6rt6gt34'
@@ -44,19 +45,6 @@ class UserUpdate(User, user_models.BaseUserUpdate):
 
 class UserDB(User, user_models.BaseUserDB):
     pass
-
-
-class Item(BaseModel):
-    id: int
-    item_name: str
-    price: float
-    phone: str
-
-
-class ItemIn(BaseModel):
-    item_name: str
-    price: float
-    phone: str
 
 
 database = databases.Database(DATABASE_URL)
@@ -139,13 +127,11 @@ app.include_router(
     prefix='/auth/jwt',
     tags=['auth'],
 )
-# See https://fastapi-users.github.io/fastapi-users/configuration/routers/reset/
+
 app.include_router(
     fastapi_users.get_register_router(), prefix='/auth', tags=['auth']
 )
-# OLD: app.include_router(
-#     fastapi_users.get_reset_password_router(SECRET), prefix='/auth', tags=['auth'],
-# )
+
 app.include_router(
     fastapi_users.get_reset_password_router(), prefix='/auth', tags=['auth'],
 )
