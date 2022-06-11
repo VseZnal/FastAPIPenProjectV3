@@ -1,7 +1,7 @@
+import sa as sa
 import sqlalchemy
 import uvicorn
-from typing import Optional
-
+from typing import Optional, List
 import databases
 from fastapi import FastAPI
 from fastapi_users import models as user_models
@@ -10,11 +10,12 @@ from fastapi_users.authentication import CookieAuthentication
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers
 from fastapi_users.db import SQLAlchemyUserDatabase
-
 import sqlalchemy as sa
 from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
-from myapi.models.product import *
+from tortoise.contrib.pydantic import pydantic_model_creator
+from app.models.product import *
+
 
 DATABASE_URL = 'sqlite:///./test.db'
 SECRET = '6bef18936ac12a9096e9fe7a3ygh3456368fe1f77746346erg6rt6gt34'
@@ -93,15 +94,6 @@ def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
 
 
-# OLD: jwt_authentication = JWTAuthentication(
-#     secret=SECRET, lifetime_seconds=3600, tokenUrl='auth/jwt/login'
-# )
-
-# OLD: fastapi_users = FastAPIUsers(
-#     user_db, [cookie_authentication], User, UserCreate, UserUpdate, UserDB,
-# )
-
-
 fastapi_users = FastAPIUsers(
     get_user_manager,
     [cookie_authentication],
@@ -147,6 +139,24 @@ async def create_item(note: ItemIn):
     return {**note.dict(), "id": last_record_id}
 
 
-# ADDED:
+@app.delete('/items/{id}')
+async def delete_item(id: int):
+    query = item.delete().where(item.c.id == id)
+    await database.execute(query)
+    return {"detail": "item deleted", "status_code": 204}
+
+
+@app.get("/items/{id}", response_model=Item)
+async def get_item_by_id(id: int):
+    query = item.select().where(item.c.id == id)
+    return await database.fetch_one(query)
+
+
+@app.get('/items', response_model=List[Item])
+async def read_items():
+    query = item.select()
+    return await database.fetch_all(query)
+
+
 if __name__ == '__main__':
     uvicorn.run(app, host='127.0.0.1', port=8000)
