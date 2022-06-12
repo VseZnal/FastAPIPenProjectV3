@@ -1,4 +1,3 @@
-import sa as sa
 import sqlalchemy
 import uvicorn
 from typing import Optional, List
@@ -11,9 +10,7 @@ from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers
 from fastapi_users.db import SQLAlchemyUserDatabase
 import sqlalchemy as sa
-from pydantic import BaseModel
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
-from tortoise.contrib.pydantic import pydantic_model_creator
 from app.models.product import *
 
 
@@ -64,7 +61,6 @@ metadata.create_all(engine)
 users = UserTable.__table__
 
 
-# OLD: user_db = users_db.SQLAlchemyUserDatabase(UserDB, database, users)
 def get_user_db():
     yield users_db.SQLAlchemyUserDatabase(UserDB, database, users)
 
@@ -130,8 +126,13 @@ app.include_router(
 app.include_router(fastapi_users.get_users_router(), prefix='/users', tags=['users'])
 
 
-@app.post("/items/", response_model=Item)
-async def create_item(note: ItemIn):
+# получить текущего активного и проверенного пользователя
+current_active_verified_user = fastapi_users.current_user(active=True, verified=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)
+
+
+@app.post("/items/", response_model=Item, tags=["items"])
+async def create_item(note: ItemIn, user: User = Depends(current_active_verified_user)):
     query = item.insert().values(item_name=note.item_name,
                                  price=note.price,
                                  phone=note.phone)
@@ -139,23 +140,28 @@ async def create_item(note: ItemIn):
     return {**note.dict(), "id": last_record_id}
 
 
-@app.delete('/items/{id}')
-async def delete_item(id: int):
+@app.delete('/items/{id}', tags=["items"])
+async def delete_item(id: int, user: User = Depends(current_superuser)):
     query = item.delete().where(item.c.id == id)
     await database.execute(query)
     return {"detail": "item deleted", "status_code": 204}
 
 
-@app.get("/items/{id}", response_model=Item)
-async def get_item_by_id(id: int):
+@app.get("/items/{id}", response_model=Item, tags=["items"])
+async def get_item_by_id(id: int, user: User = Depends(current_active_verified_user)):
     query = item.select().where(item.c.id == id)
     return await database.fetch_one(query)
 
 
-@app.get('/items', response_model=List[Item])
+@app.get('/items', response_model=List[Item], tags=["items"])
 async def read_items():
     query = item.select()
     return await database.fetch_all(query)
+
+
+
+
+
 
 
 if __name__ == '__main__':
