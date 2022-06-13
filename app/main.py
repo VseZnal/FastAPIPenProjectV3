@@ -11,7 +11,7 @@ from fastapi_users import BaseUserManager, FastAPIUsers
 from fastapi_users.db import SQLAlchemyUserDatabase
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import DeclarativeMeta, declarative_base
-from starlette.middleware.cors import CORSMiddleware
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.models.product import *
 
