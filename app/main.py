@@ -161,7 +161,7 @@ async def delete_item(id: int, user: User = Depends(current_superuser)):
 
 
 @app.get("/items/{id}", response_model=Item, tags=["items"])
-async def get_item_by_id(id: int, user: User = Depends(current_active_verified_user)):
+async def get_item_by_id(id: int):
     query = item.select().where(item.c.id == id)
     return await database.fetch_one(query)
 
@@ -172,9 +172,10 @@ async def read_items():
     return await database.fetch_all(query)
 
 
-
-
-
+@app.get('/users', response_model=List[User], tags=["test"])
+async def read_items():
+    pass
+    # no attribute 'select'
 
 
 if __name__ == '__main__':
